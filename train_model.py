@@ -2,7 +2,8 @@ import spacy
 from spacy.training import Example, offsets_to_biluo_tags
 import random
 from spacy.util import minibatch, compounding
-from data import TRAIN_DATA
+from training_data import TRAIN_DATA
+from public.input_processing import create_input_processing
 
 
 def train_ner_model(train_data, model=None, n_iter=100):
@@ -19,6 +20,9 @@ def train_ner_model(train_data, model=None, n_iter=100):
     for _, annotations in train_data:
         for ent in annotations.get("entities"):
             ner.add_label(ent[2])
+
+    spacy.Language.factory("input_processing", func=create_input_processing)
+    nlp.add_pipe("input_processing", last=True)
 
     nlp.initialize()  # Initialize the NLP pipeline before creating examples
     examples = [Example.from_dict(nlp.make_doc(text), annotations) for text, annotations in train_data]
@@ -46,6 +50,7 @@ def train_ner_model(train_data, model=None, n_iter=100):
                 nlp.update(batch, drop=0.5, losses=losses)
 
     return nlp
+
 
 # Train the NER model
 nlp = train_ner_model(TRAIN_DATA)
